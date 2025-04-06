@@ -1,0 +1,31 @@
+pipeline{    
+    agent any    
+    
+    stages{        
+        stage('code chechout') {  
+            steps{ 
+                git branch: 'main',               
+                url: 'https://github.com/username/application-assessment-repo.git'            
+            }       
+        }        
+        stage('build artifact') {            
+            steps{                
+                sh 'mvn clean package'           
+            }        
+        }        
+        stage('copy artifact to prod') {            
+            steps{                
+                sshagent(['prodkey']) {                
+                sh "scp -o strictHostKeyChecking=no **/*.war ec2-user@ip:/home/ec2-user/app.war"                
+                }            
+            }        
+        }        
+        stage('start app in prod') {            
+            steps{                
+                sshagent(['prodkey']) {                
+                    sh 'ssh -t -t ec2-user@ip -o strictHostKeyChecking=no nohup java -jar /home/ec2-user/app.war &'                
+                    }            
+                }        
+            }    
+        }
+    }
